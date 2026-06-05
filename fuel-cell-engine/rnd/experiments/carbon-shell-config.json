@@ -1,0 +1,250 @@
+{
+  "meta": {
+    "pipeline": "Ni@C Carbon Shell Optimization — Direction A",
+    "created_by": "scientist_level1",
+    "date": "2026-06-05",
+    "goal": "Find optimal Ni-alloy + carbon shell configuration for PGM-free AEMFC anode with maximum HOR activity and shell stability",
+    "plan_file": "",
+    "source_confidence": "MEDIUM"
+  },
+
+  "calibration": {
+    "enabled": true,
+    "stop_on_fail": true,
+    "oc20_benchmarks": [
+      {
+        "name": "Pt(111)-H adsorption",
+        "structure_type": "fcc111_slab",
+        "element": "Pt",
+        "expected": -0.09,
+        "tolerance": 0.15,
+        "units": "eV",
+        "source": "[FACT] Norskov 2004 Science — Pt delta_G_H ~ -0.09 eV at thermoneutral"
+      },
+      {
+        "name": "Ni(111)-H adsorption",
+        "structure_type": "fcc111_slab",
+        "element": "Ni",
+        "expected": -0.43,
+        "tolerance": 0.15,
+        "units": "eV",
+        "source": "[FACT] Norskov 2004 volcano plot — Ni delta_G_H ~ -0.43 eV"
+      }
+    ],
+    "mace_benchmarks": [
+      {
+        "name": "Ni bulk lattice constant",
+        "structure_type": "fcc_bulk",
+        "element": "Ni",
+        "expected_lattice_A": 3.524,
+        "tolerance_A": 0.05,
+        "source": "[FACT] Experimental Ni FCC a=3.524 Å"
+      },
+      {
+        "name": "Pristine graphene stability MD",
+        "structure_type": "graphene_md",
+        "expected_intact": 1.0,
+        "tolerance": 0.02,
+        "md_temperature_K": 343,
+        "md_steps": 5000,
+        "vacancy_percent": 0,
+        "source": "[FACT] Pristine graphene is stable at 70C operating temperature"
+      }
+    ],
+    "pass_criteria": {
+      "oc20_max_MAE_eV": 0.15,
+      "mace_all_pass": true
+    }
+  },
+
+  "search_space": {
+    "description": "Ni@C catalyst: Ni-alloy core + graphene shell. Optimize dopant, shell layers, vacancy, N-doping.",
+    "variables": {
+      "dopant_type": {
+        "type": "categorical",
+        "values": ["none", "Mo", "Fe", "Co", "Cu", "W"],
+        "units": "",
+        "source": "[FACT] Common Ni-alloy dopants for HOR from literature review"
+      },
+      "dopant_percent": {
+        "type": "float",
+        "range": [0, 40],
+        "step": 5,
+        "units": "at%",
+        "source": "[REASONING] 0-40 at% covers dilute to near-equiatomic alloys"
+      },
+      "n_layers": {
+        "type": "int",
+        "range": [1, 4],
+        "units": "graphene layers",
+        "source": "[FACT] 1-4 graphene layers typical for carbon-encapsulated catalysts"
+      },
+      "vacancy_percent": {
+        "type": "float",
+        "range": [0, 20],
+        "step": 2,
+        "units": "% C vacancies",
+        "source": "[REASONING] Vacancies create active sites but weaken shell — tradeoff"
+      },
+      "n_doping_percent": {
+        "type": "float",
+        "range": [0, 15],
+        "step": 2,
+        "units": "% N substitution",
+        "source": "[FACT] N-doping improves conductivity and HOR activity (literature)"
+      }
+    },
+    "fixed_conditions": {
+      "electrolyte_pH": {
+        "value": 14,
+        "units": "pH",
+        "source": "[FACT] KOH 7M ~ pH 14 for AEMFC"
+      },
+      "temperature_K": {
+        "value": 343,
+        "units": "K",
+        "source": "[FACT] Standard AEMFC operating temperature 70°C"
+      }
+    }
+  },
+
+  "targets": {
+    "hor_activity": {
+      "metric": "hor_activity",
+      "direction": "minimize_abs",
+      "reference": 0.0,
+      "threshold": 0.3,
+      "units": "eV",
+      "source": "[FACT] Norskov volcano: delta_G_H → 0 = optimal HOR activity",
+      "priority": 1,
+      "note": "delta_G_H closer to 0 = better HOR. Pt reference ~ -0.09 eV."
+    },
+    "h2_barrier": {
+      "metric": "h2_barrier",
+      "direction": "minimize",
+      "threshold": 0.8,
+      "units": "eV",
+      "source": "[REASONING] H2 must diffuse through shell — barrier < 0.8 eV for reasonable rate",
+      "priority": 2,
+      "note": "H2 dissociation/diffusion barrier through graphene shell"
+    },
+    "o2_barrier": {
+      "metric": "o2_barrier",
+      "direction": "maximize",
+      "threshold": 0.5,
+      "units": "eV",
+      "source": "[REASONING] High O2 barrier = shell protects Ni from oxidation",
+      "priority": 2,
+      "note": "O2 penetration barrier — want HIGH to prevent Ni oxidation"
+    },
+    "shell_stability": {
+      "metric": "shell_stability",
+      "direction": "maximize",
+      "threshold": 0.7,
+      "units": "intact_ratio",
+      "source": "[REASONING] Shell must survive MD at 343K — intact_ratio > 0.7",
+      "priority": 3,
+      "note": "Fraction of graphene bonds intact after MD simulation"
+    }
+  },
+
+  "tools": {
+    "screening": {
+      "tool": "oc20",
+      "model": "GemNet-OC",
+      "task_name": "is2re",
+      "evaluates": ["hor_activity"],
+      "settings": {
+        "slab_surface": "fcc111",
+        "adsorbate": "H",
+        "adsorption_site": "fcc"
+      },
+      "note": "OC20 predicts H adsorption energy on Ni-alloy surface through graphene"
+    },
+    "simulation": {
+      "tool": "mace",
+      "model": "mace-mp-medium",
+      "task_name": "neb_and_md",
+      "evaluates": ["h2_barrier", "o2_barrier", "shell_stability"],
+      "settings": {
+        "neb_images": 5,
+        "neb_fmax": 0.05,
+        "neb_max_steps": 200,
+        "md_temperature_K": 343,
+        "md_steps": 10000,
+        "md_timestep_fs": 1.0
+      },
+      "note": "MACE runs NEB for barriers + MD for shell stability"
+    },
+    "ensemble": {
+      "enabled": true,
+      "models": ["small", "medium", "large"],
+      "confidence_threshold_eV": 0.10,
+      "action_on_high_uncertainty": "flag_and_deprioritize"
+    },
+    "validation": {
+      "tool": "jdftx",
+      "when": "top_n",
+      "n": 3,
+      "evaluates": ["hor_activity"],
+      "settings": {
+        "electrolyte": "KOH",
+        "concentration_M": 7,
+        "temperature_K": 343,
+        "applied_potential_V": 0.0
+      }
+    }
+  },
+
+  "optimizer": {
+    "tool": "botorch",
+    "type": "multi_objective",
+    "objectives": ["hor_activity", "h2_barrier", "o2_barrier", "shell_stability"],
+    "constraints": [
+      {"metric": "shell_stability", "operator": ">=", "value": 0.5},
+      {"metric": "h2_barrier", "operator": "<=", "value": 1.2}
+    ],
+    "n_init": 8,
+    "n_iterations": 25,
+    "batch_size": 1,
+    "acquisition": "qLogExpectedHypervolumeImprovement",
+    "seed": 42
+  },
+
+  "llm_in_loop": {
+    "enabled": false,
+    "api": "anthropic",
+    "model": "claude-sonnet-4-6",
+    "triggers": {
+      "on_plateau": {"n_iter_no_improve": 5},
+      "on_anomaly": {"threshold": 3.0}
+    },
+    "max_llm_calls": 5,
+    "fallback_if_no_api": "continue_with_defaults"
+  },
+
+  "structure_generator": {
+    "type": "ni_at_c_core_shell",
+    "slab_surface": "fcc111",
+    "slab_layers": 4,
+    "fix_bottom_layers": 2,
+    "graphene_interlayer_A": 3.4,
+    "ni_c_gap_A": 2.15,
+    "graphene_stacking": "AB",
+    "vacancy_method": "random_removal",
+    "doping_method": "random_substitution_C_to_N",
+    "alloy_method": "random_substitution_surface_layers",
+    "description": "Ni-alloy slab with graphene shell on top. Dopant substitutes Ni in top 2 layers."
+  },
+
+  "output": {
+    "dir": "rnd/compute/ni_carbon_shell_optimization",
+    "results_csv": "results.csv",
+    "ranked_md": "ranked_candidates.md",
+    "pareto_plot": "pareto.png",
+    "best_structure": "best_candidate.xyz",
+    "calibration_report": "calibration_report.md",
+    "verification_report": "verification_report.md",
+    "failure_analysis": "failure_analysis.md"
+  }
+}

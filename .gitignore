@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Large files (GitHub 100MB limit)
+*.zip
+fuel-cell-engine/data/synterra_repo/solid-state_dataset_20200713.json
+fuel-cell-engine/data/synterra_repo/_git_backup/
+fuel-cell-engine/data/gnome_data/stable_materials_summary.csv
+fuel-cell-engine/data/gnome_repo/_git_backup/
+
+# Environment
+.env
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# Compute outputs
+rnd/compute/
+debug_output/

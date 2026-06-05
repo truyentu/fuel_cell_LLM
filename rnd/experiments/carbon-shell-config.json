@@ -1,0 +1,270 @@
+{
+  "meta": {
+    "pipeline": "ni_carbon_shell_optimization",
+    "created_by": "scientist_level1",
+    "date": "2026-06-03",
+    "goal": "Find optimal Ni-alloy + carbon shell configuration for PGM-free AEMFC HOR anode",
+    "plan_file": "rnd/experiments/carbon-shell-plan.md",
+    "source_confidence": "MEDIUM"
+  },
+
+  "calibration": {
+    "enabled": true,
+    "stop_on_fail": true,
+    "oc20_benchmarks": [
+      {
+        "name": "Pt111_H",
+        "structure_type": "fcc111_slab_H",
+        "element": "Pt",
+        "expected": -0.09,
+        "tolerance": 0.15,
+        "units": "eV (ΔG_H*)",
+        "source": "[UNVERIFIED] Nørskov Sabatier, well-known but not in notebook"
+      },
+      {
+        "name": "Ni111_H",
+        "structure_type": "fcc111_slab_H",
+        "element": "Ni",
+        "expected": -0.45,
+        "tolerance": 0.15,
+        "units": "eV (ΔG_H*)",
+        "source": "[REASONING] Papers say Ni H-binding 'too strong', -0.4 to -0.5 typical in literature"
+      }
+    ],
+    "mace_benchmarks": [
+      {
+        "name": "graphene_pristine_stability",
+        "structure_type": "graphene_sheet",
+        "vacancy_percent": 0,
+        "md_temperature_K": 343,
+        "md_steps": 10000,
+        "expected_intact": 1.0,
+        "tolerance": 0.01,
+        "source": "[REASONING] Physical certainty: pristine graphene stable at 70°C"
+      },
+      {
+        "name": "graphene_50pct_vacancy",
+        "structure_type": "graphene_sheet",
+        "vacancy_percent": 50,
+        "md_temperature_K": 343,
+        "md_steps": 10000,
+        "expected_intact_max": 0.5,
+        "source": "[REASONING] Physical certainty: 50% vacancy = structurally unstable"
+      },
+      {
+        "name": "Ni_bulk_lattice",
+        "structure_type": "bulk_fcc",
+        "element": "Ni",
+        "expected_lattice_A": 3.52,
+        "tolerance_A": 0.05,
+        "source": "[FACT] Experimental Ni FCC lattice constant"
+      }
+    ],
+    "pass_criteria": {
+      "oc20_max_MAE_eV": 0.15,
+      "mace_all_pass": true
+    }
+  },
+
+  "search_space": {
+    "description": "Ni alloy composition + carbon shell structure for AEMFC anode",
+    "variables": {
+      "dopant_type": {
+        "type": "categorical",
+        "values": ["Mo", "Fe", "Co", "none"],
+        "source": "[REASONING] Common HOR-active Ni alloys in alkaline — Ni binding too strong, alloy weakens H-binding"
+      },
+      "dopant_percent": {
+        "type": "float",
+        "range": [0, 30],
+        "step": 5,
+        "units": "at%",
+        "source": "[REASONING] >30% destabilizes FCC Ni structure"
+      },
+      "n_layers": {
+        "type": "int",
+        "range": [1, 3],
+        "units": "graphene layers",
+        "source": "[FACT] Paper: 'few layers graphitic carbon' shell tested — Source: Unveiling...Ni oxidation state"
+      },
+      "vacancy_percent": {
+        "type": "float",
+        "range": [0, 20],
+        "step": 2,
+        "units": "%",
+        "source": "[FACT] Authors suggest optimize 'defect size and density' — Source: Unveiling...Ni oxidation state"
+      },
+      "n_doping_percent": {
+        "type": "float",
+        "range": [0, 10],
+        "step": 2,
+        "units": "%",
+        "source": "[REASONING] N-doping may stabilize graphene + modify gas selectivity"
+      }
+    },
+    "fixed_conditions": {
+      "temperature_K": {
+        "value": 343,
+        "units": "K",
+        "source": "[FACT] Stability test at 70°C — Source: Unveiling...Ni oxidation state"
+      },
+      "ni_c_distance_A": {
+        "value": 2.15,
+        "units": "Å",
+        "source": "[FACT] '2.15 Å separation from Ni surface' — Source: Unveiling...Ni oxidation state"
+      },
+      "potential_vs_RHE": {
+        "value": 0.3,
+        "units": "V",
+        "source": "[FACT] 'metallic Ni stable up to 0.3V vs RHE' — Source: Unveiling...Ni oxidation state"
+      },
+      "slab_size": {
+        "value": [4, 4, 4],
+        "units": "supercell (nx, ny, n_layers)",
+        "source": "[REASONING] 4×4×4 = 64 Ni atoms, balances accuracy vs cost"
+      }
+    }
+  },
+
+  "targets": {
+    "hor_activity": {
+      "metric": "delta_G_H_star_eV",
+      "direction": "minimize_abs",
+      "reference": 0.0,
+      "threshold": 0.2,
+      "units": "eV",
+      "source": "[UNVERIFIED] Sabatier: optimal ΔG_H* ≈ 0 (thermoneutral). Cần paper confirm.",
+      "priority": 1,
+      "note": "Minimize |ΔG_H*| — closer to 0 = better HOR. Works regardless of exact Pt reference."
+    },
+    "h2_barrier": {
+      "metric": "neb_h2_barrier_eV",
+      "direction": "minimize",
+      "threshold": 0.3,
+      "units": "eV",
+      "source": "[REASONING] H₂ kinetic diameter 0.29nm, needs low barrier for fast permeation through shell",
+      "priority": 2
+    },
+    "o2_barrier": {
+      "metric": "neb_o2_barrier_eV",
+      "direction": "maximize",
+      "threshold": 0.8,
+      "units": "eV",
+      "source": "[REASONING] O₂ kinetic diameter 0.35nm, must be blocked to prevent Ni oxidation at >0.3V",
+      "priority": 2
+    },
+    "shell_stability": {
+      "metric": "md_intact_ratio",
+      "direction": "maximize",
+      "threshold": 0.95,
+      "units": "fraction (0-1)",
+      "source": "[REASONING] Shell must remain >95% intact after 10ps MD at 343K to indicate thermal stability",
+      "priority": 3
+    }
+  },
+
+  "tools": {
+    "screening": {
+      "tool": "fairchem",
+      "model": "uma-s-1p2",
+      "task_name": "oc20",
+      "evaluates": ["hor_activity"],
+      "settings": {
+        "fmax": 0.05,
+        "max_steps": 200
+      },
+      "note": "OC20 used for BARE alloy surface + H only (no graphene). Graphene evaluated by MACE."
+    },
+    "simulation": {
+      "tool": "mace",
+      "model": "mace_mp_medium",
+      "device": "cuda",
+      "evaluates": ["h2_barrier", "o2_barrier", "shell_stability"],
+      "settings": {
+        "neb_images": 5,
+        "neb_fmax": 0.05,
+        "neb_max_steps": 200,
+        "md_steps": 10000,
+        "md_timestep_fs": 1.0,
+        "md_temperature_K": 343
+      }
+    },
+    "ensemble": {
+      "enabled": true,
+      "models": ["small", "medium", "large"],
+      "confidence_threshold_eV": 0.10,
+      "action_on_high_uncertainty": "flag_and_deprioritize"
+    },
+    "validation": {
+      "tool": "jdftx",
+      "when": "top_n",
+      "n": 5,
+      "evaluates": ["hor_activity", "shell_stability"],
+      "settings": {
+        "solvation": {
+          "solvent": "H2O",
+          "cation": "K+ 1.0",
+          "anion": "OH- 1.0"
+        },
+        "potential_vs_SHE": 0.3,
+        "cutoff_Ry": 20,
+        "pcm_variant": "CANDLE"
+      }
+    }
+  },
+
+  "optimizer": {
+    "tool": "botorch",
+    "type": "multi_objective",
+    "objectives": ["hor_activity", "shell_stability"],
+    "constraints": [
+      {"metric": "h2_barrier", "operator": "<", "value": 0.3},
+      {"metric": "o2_barrier", "operator": ">", "value": 0.8}
+    ],
+    "n_init": 8,
+    "n_iterations": 25,
+    "batch_size": 1,
+    "acquisition": "qLogExpectedHypervolumeImprovement",
+    "seed": 42
+  },
+
+  "llm_in_loop": {
+    "enabled": true,
+    "api": "anthropic",
+    "model": "claude-sonnet-4-20250514",
+    "triggers": {
+      "high_failure_rate": {"threshold": 0.3},
+      "convergence_stalled": {"n_iter_no_improve": 5},
+      "phase_complete": true,
+      "anomaly_detected": true,
+      "ensemble_disagreement": {"std_threshold": 0.15}
+    },
+    "max_llm_calls": 5,
+    "fallback_if_no_api": "continue_with_defaults"
+  },
+
+  "structure_generator": {
+    "type": "ni_at_c_slab_model",
+    "slab_surface": "fcc111",
+    "slab_layers": 4,
+    "fix_bottom_layers": 2,
+    "graphene_interlayer_A": 3.4,
+    "ni_c_gap_A": 2.15,
+    "graphene_stacking": "AB",
+    "vacancy_method": "random_removal",
+    "doping_method": "random_substitution_C_to_N",
+    "alloy_method": "random_substitution_surface_layers",
+    "description": "Ni-alloy FCC(111) 4×4×4 slab + graphene shell (1-3 layers) with vacancies and N-doping. OC20 uses bare slab; MACE uses full Ni@C."
+  },
+
+  "output": {
+    "dir": "rnd/compute/ni_carbon_shell_optimization/",
+    "results_csv": "results.csv",
+    "ranked_md": "ranked_candidates.md",
+    "pareto_plot": "pareto.png",
+    "best_structure": "best_candidate.xyz",
+    "calibration_report": "calibration_report.md",
+    "verification_report": "verification_report.md",
+    "failure_analysis": "failure_analysis.md"
+  }
+}

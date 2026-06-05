@@ -1,0 +1,232 @@
+{
+  "meta": {
+    "pipeline": "ni_alloy_oxidation_resistant_screening",
+    "created_by": "scientist_level1",
+    "date": "2026-06-05",
+    "goal": "Find Ni-X alloy that self-resists oxidation above +0.3V without carbon shell protection",
+    "plan_file": "rnd/experiments/alloy-screening-plan.md",
+    "source_confidence": "LOW-MEDIUM"
+  },
+
+  "calibration": {
+    "enabled": true,
+    "stop_on_fail": true,
+    "oc20_benchmarks": [
+      {
+        "name": "Pt111_H",
+        "structure_type": "fcc111_slab_H",
+        "element": "Pt",
+        "expected": -0.27,
+        "tolerance": 0.15,
+        "source": "Norskov Pt benchmark"
+      },
+      {
+        "name": "Ni111_H",
+        "structure_type": "fcc111_slab_H",
+        "element": "Ni",
+        "expected": -0.45,
+        "tolerance": 0.15,
+        "source": "DFT literature — Ni binds H too strongly"
+      }
+    ],
+    "mace_benchmarks": [
+      {
+        "name": "Ni_bulk_lattice",
+        "structure_type": "bulk_fcc",
+        "element": "Ni",
+        "expected_lattice_A": 3.52,
+        "tolerance_A": 0.05
+      },
+      {
+        "name": "NiO_formation",
+        "structure_type": "bulk_rocksalt",
+        "element": "NiO",
+        "expected_lattice_A": 4.17,
+        "tolerance_A": 0.10
+      }
+    ],
+    "pass_criteria": {
+      "oc20_max_MAE_eV": 0.15,
+      "mace_all_pass": true
+    }
+  },
+
+  "search_space": {
+    "description": "Bare Ni-X alloy surfaces — no carbon shell. Focus on oxidation-resistant compositions.",
+    "variables": {
+      "dopant_type": {
+        "type": "categorical",
+        "values": ["Mo", "W", "Fe", "Co", "Cu"],
+        "source": "[REASONING] GNoME: Ni8Mo, Ni8W stable. Literature: NiMo, NiFe, NiCo for HOR."
+      },
+      "dopant_percent": {
+        "type": "float",
+        "range": [5, 50],
+        "step": 5,
+        "units": "at%",
+        "source": "[REASONING] Wider range for Hướng B — explore Ni-rich to X-rich. GNoME Ni8Mo=11%Mo, Ni8W=11%W."
+      },
+      "surface_facet": {
+        "type": "categorical",
+        "values": ["111", "100", "110"],
+        "source": "[FACT] Standard low-index FCC surfaces. (111) most stable, (100)/(110) more reactive."
+      }
+    },
+    "fixed_conditions": {
+      "temperature_K": {
+        "value": 343,
+        "units": "K",
+        "source": "[FACT] AEMFC operates at 70C — same as Hướng A"
+      },
+      "electrolyte": {
+        "value": "KOH 7M",
+        "units": "",
+        "source": "[FACT] Standard AEMFC electrolyte"
+      },
+      "critical_potential_V": {
+        "value": 0.3,
+        "units": "V vs RHE",
+        "source": "[FACT] Ni oxidizes above +0.3V — Source: Cornell Ni@C paper"
+      }
+    }
+  },
+
+  "targets": {
+    "hor_activity": {
+      "metric": "H_adsorption_energy_eV",
+      "direction": "minimize_abs",
+      "reference": 0.0,
+      "threshold": 0.15,
+      "units": "eV",
+      "source": "[REASONING] Sabatier: thermoneutral ΔG_H* ≈ 0 optimal for HOR",
+      "priority": 1
+    },
+    "oxidation_resistance": {
+      "metric": "O_adsorption_energy_eV",
+      "direction": "maximize",
+      "reference": null,
+      "threshold": -1.5,
+      "units": "eV",
+      "source": "[REASONING] PROXY — less negative O_ads = harder to oxidize surface. Threshold -1.5 eV estimated from Ni(111) O_ads ≈ -2.0 eV (want LESS negative = more resistant). ⚠️ PROXY, needs JDFTx validation.",
+      "priority": 2,
+      "note": "⚠️ This is a PROXY metric. True oxidation potential requires JDFTx grand-canonical calculation in Phase 2."
+    },
+    "bulk_stability": {
+      "metric": "formation_energy_per_atom_eV",
+      "direction": "minimize",
+      "reference": null,
+      "threshold": 0.05,
+      "units": "eV above hull",
+      "source": "[FACT] Standard thermodynamic stability criterion. Materials on/below convex hull are stable.",
+      "priority": 3
+    }
+  },
+
+  "tools": {
+    "screening": {
+      "tool": "fairchem",
+      "model": "uma-s-1p2",
+      "task_name": "oc20",
+      "evaluates": ["hor_activity", "oxidation_resistance"],
+      "settings": {
+        "fmax": 0.05,
+        "max_steps": 200
+      },
+      "note": "OC20 predicts BOTH H_ads (HOR) and O_ads (oxidation proxy) on bare alloy surface"
+    },
+    "simulation": {
+      "tool": "mace",
+      "model": "mace_mp_medium",
+      "device": "cuda",
+      "evaluates": ["oxidation_resistance"],
+      "settings": {
+        "neb_images": 0,
+        "neb_fmax": 0,
+        "md_steps": 0,
+        "md_timestep_fs": 0,
+        "md_temperature_K": 0
+      },
+      "note": "MACE NOT used for NEB/MD in Hướng B (no shell). Used only as backup for O_ads if OC20 fails."
+    },
+    "ensemble": {
+      "enabled": true,
+      "models": ["small", "medium", "large"],
+      "confidence_threshold_eV": 0.10,
+      "action_on_high_uncertainty": "flag_and_deprioritize"
+    },
+    "validation": {
+      "tool": "jdftx",
+      "when": "top_n",
+      "n": 5,
+      "evaluates": ["oxidation_resistance", "hor_activity"],
+      "settings": {
+        "solvation": {
+          "solvent": "H2O",
+          "cation": "K+ 7.0",
+          "anion": "OH- 7.0"
+        },
+        "potential_vs_SHE": 0.3,
+        "cutoff_Ry": 20
+      },
+      "note": "CRITICAL for Hướng B: JDFTx checks if alloy stays metallic at +0.3V in KOH. This is the TRUE oxidation resistance test."
+    }
+  },
+
+  "optimizer": {
+    "tool": "botorch",
+    "type": "multi_objective",
+    "objectives": ["hor_activity", "oxidation_resistance"],
+    "constraints": [
+      {"metric": "bulk_stability", "operator": "<", "value": 0.05}
+    ],
+    "n_init": 10,
+    "n_iterations": 30,
+    "batch_size": 1,
+    "acquisition": "qLogExpectedHypervolumeImprovement",
+    "seed": 123
+  },
+
+  "llm_in_loop": {
+    "enabled": true,
+    "api": "anthropic",
+    "model": "claude-sonnet-4-20250514",
+    "triggers": {
+      "high_failure_rate": {"threshold": 0.3},
+      "convergence_stalled": {"n_iter_no_improve": 6}
+    },
+    "max_llm_calls": 5,
+    "fallback_if_no_api": "continue_with_defaults"
+  },
+
+  "structure_generator": {
+    "type": "ni_alloy_bare_surface",
+    "slab_surface": "fcc_variable",
+    "slab_size": [4, 4, 4],
+    "slab_layers": 4,
+    "fix_bottom_layers": 2,
+    "vacuum_A": 15.0,
+    "alloy_method": "random_substitution_all_layers",
+    "description": "Generate bare Ni-X alloy FCC slab with specified facet. No graphene shell. Random dopant substitution throughout slab (not just surface)."
+  },
+
+  "output": {
+    "dir": "rnd/compute/ni_alloy_oxidation_screening/",
+    "results_csv": "results.csv",
+    "ranked_md": "ranked_candidates.md",
+    "pareto_plot": "pareto.png",
+    "best_structure": "best_candidate.xyz",
+    "calibration_report": "calibration_report.md",
+    "verification_report": "verification_report.md",
+    "failure_analysis": "failure_analysis.md"
+  },
+
+  "knowledge_sources": {
+    "gnome_findings": {
+      "Ni8Mo": {"stable": true, "formation_energy": -0.047, "space_group": "I4/mmm"},
+      "Ni8W": {"stable": true, "formation_energy": -0.068, "space_group": "unknown"},
+      "Cu4Ni": {"stable": true, "formation_energy": -0.011}
+    },
+    "synterra_note": "SynTERRA recipes mostly OXIDES (NiFe2O4 etc). Not directly applicable for metallic alloy synthesis. Lab will need: arc melting, sputtering, or co-reduction.",
+    "notebook_gap": "No DFT data for NiMo/NiW oxidation potential in papers. Proxy metric used. JDFTx Phase 2 will provide ground truth."
+  }
+}

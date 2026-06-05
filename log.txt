@@ -1,0 +1,192 @@
+[10:20:49] [engine.phases.screening] [INFO] Screening complete: 2 success, 0 failed, best=327901.739
+[10:20:49] [engine.analysis.verification] [INFO] ==================================================
+[10:20:49] [engine.analysis.verification] [INFO] VERIFICATION PIPELINE
+[10:20:49] [engine.analysis.verification] [INFO] ==================================================
+[10:20:49] [engine.analysis.verification] [WARNING] Ensemble: 2 top candidates uncertain
+[10:20:49] [engine.analysis.verification] [INFO]   [PASS] Sanity: All values in physical range
+[10:20:49] [engine.analysis.verification] [INFO]   [FAIL] Convergence: Too few data points (2)
+[10:20:49] [engine.analysis.verification] [INFO]   [FAIL] Cross-tool: Too few candidates
+[10:20:49] [engine.analysis.verification] [INFO]   [FAIL] Ensemble: 2/5 top candidates have high uncertainty
+[10:20:49] [engine.analysis.verification] [INFO]   [PASS] Perturbation: Too few candidates to assess (assumed OK)
+[10:20:49] [engine.analysis.verification] [INFO]   [PASS] Literature: Too few candidates (assumed OK)
+[10:20:49] [engine.analysis.verification] [INFO]   [FAIL] Consistency: 1/2 have H₂_barrier > O₂_barrier (unexpected)
+[10:20:49] [engine.analysis.verification] [INFO]   TRUST SCORE: D (3.0/7.0)
+[10:20:49] [engine] [INFO] Trust Score: D
+[10:20:49] [engine] [ERROR] GATE FAIL (Phase 1→2): Trust Score D. Results NOT reliable. DO NOT proceed to lab.
+[10:20:49] [engine] [ERROR] Options: debug model, check calibration, expand search space, add data
+[10:20:49] [engine.utils.reporter] [INFO] Results CSV saved: rnd/compute/ni_carbon_shell_optimization/results.csv (2 rows)
+[10:20:49] [engine.utils.reporter] [INFO] Ranked MD saved: rnd/compute/ni_carbon_shell_optimization/ranked_candidates.md
+[10:20:50] [engine.utils.reporter] [INFO] Pareto plot saved: rnd/compute/ni_carbon_shell_optimization/pareto.png
+[10:20:50] [engine.utils.reporter] [INFO] Verification report saved: rnd/compute/ni_carbon_shell_optimization/verification_report.md
+^C
+/content# tail -f /content/engine/rnd/compute/ni_carbon_shell_optimization/run.log
+[10:29:16] [engine] [INFO]   FUEL CELL ENGINE — Ni@C Carbon Shell Optimization
+[10:29:16] [engine] [INFO]   Goal: Find optimal Ni-alloy + carbon shell for PGM-free AEMFC anode
+[10:29:16] [engine] [INFO]   Confidence: MEDIUM
+[10:29:16] [engine] [INFO] ============================================================
+[10:29:16] [engine] [INFO] Device: cuda
+[10:29:22] [engine.runners.mace] [INFO] MACE model loaded: medium on cuda
+[10:29:22] [engine.runners.mace] [INFO] MACE model loaded: small on cuda
+[10:29:23] [engine.runners.mace] [INFO] MACE model loaded: medium on cuda
+[10:29:23] [engine.runners.mace] [INFO] MACE model loaded: large on cuda
+[10:29:23] [engine.runners.ensemble] [INFO] Ensemble initialized: 3/3 models available
+[10:29:28] [engine.runners.oc20] [ERROR] Failed to load OC20 model: 401 Client Error. (Request ID: Root=1-6a22a507-00578eb334c3c86553eec0e5;9b535e7a-b9cf-4cb8-937b-dc8cc3771dbb)
+
+Cannot access gated repo for url https://huggingface.co/facebook/UMA/resolve/main/checkpoints/uma-s-1p2.pt.
+Access to model facebook/UMA is restricted. You must have access to it and be authenticated to access it. Please log in.
+[10:29:28] [engine.runners.jdftx] [WARNING] JDFTx not found at 'jdftx'. Using mock mode.
+[10:29:28] [engine.runners.chgnet] [INFO] CHGNet model loaded on cuda
+[10:29:28] [engine.data.gnome] [INFO] Loading GNoME data from /content/engine/data/gnome_data/stable_materials_summary.csv...
+tail -f /content/engine/rnd/compute/ni_carbon_shell_optimization/run.log
+
+[10:29:37] [engine.data.gnome] [INFO] GNoME loaded: 554054 entries, 554054 unique formulas, 233834 unique element combinations
+[10:29:37] [engine.data.synterra] [INFO] Loading SynTERRA data from /content/engine/data/synterra_repo/solid-state_dataset_20200713.json...
+[10:29:39] [engine.data.synterra] [INFO] SynTERRA loaded: 31782 recipes
+[10:29:39] [engine] [INFO] Runners: MACE=OK, OC20=MOCK, CHGNet=OK, JDFTx=MOCK, GNoME=OK, SynTERRA=OK, LLM=OFF
+[10:29:39] [engine] [WARNING] ⚠️ Calibration SKIPPED (--skip-calibration flag)
+[10:29:39] [engine.phases.coarse_filter] [INFO] ==================================================
+[10:29:39] [engine.phases.coarse_filter] [INFO] Phase 1a: COARSE FILTER (100 random → top 30%)
+[10:29:39] [engine.phases.coarse_filter] [INFO]   Step 1: CHGNet stability (primary filter)
+[10:29:39] [engine.phases.coarse_filter] [INFO]   Step 2: GNoME lookup (bonus confidence)
+[10:29:39] [engine.phases.coarse_filter] [INFO] ==================================================
+[10:29:39] [engine.structures.generator] [INFO] Built Ni@C: none30, 3L, 8.0%vac, 6.0%N → 154 atoms, cell=30.0 Å Z
+[10:29:40] [engine.structures.generator] [INFO] Built Ni@C: W, 3L, 4.0%vac, 0.0%N → 157 atoms, cell=30.0 Å Z
+[10:29:43] [engine.structures.generator] [INFO] Built Ni@C: Co40, 3L, 16.0%vac, 10.0%N → 145 atoms, cell=30.0 Å Z
+[10:29:43] [engine.structures.generator] [INFO] Built Ni@C: Cu20, 1L, 18.0%vac, 6.0%N → 91 atoms, cell=23.2 Å Z
+[10:29:43] [engine.structures.generator] [INFO] Built Ni@C: Co15, 1L, 20.0%vac, 12.0%N → 90 atoms, cell=23.2 Å Z
+[10:29:44] [engine.structures.generator] [INFO] Built Ni@C: Co15, 4L, 10.0%vac, 6.0%N → 180 atoms, cell=33.4 Å Z
+[10:29:44] [engine.structures.generator] [INFO] Built Ni@C: Fe10, 1L, 12.0%vac, 14.0%N → 93 atoms, cell=23.2 Å Z
+[10:29:44] [engine.structures.generator] [INFO] Built Ni@C: none35, 4L, 6.0%vac, 10.0%N → 188 atoms, cell=33.4 Å Z
+[10:29:45] [engine.structures.generator] [INFO] Built Ni@C: none30, 3L, 6.0%vac, 0.0%N → 157 atoms, cell=30.0 Å Z
+[10:29:45] [engine.structures.generator] [INFO] Built Ni@C: W20, 4L, 14.0%vac, 12.0%N → 176 atoms, cell=33.4 Å Z
+[10:29:45] [engine.structures.generator] [INFO] Built Ni@C: Cu5, 2L, 10.0%vac, 6.0%N → 122 atoms, cell=26.6 Å Z
+[10:29:45] [engine.structures.generator] [INFO] Built Ni@C: none20, 1L, 16.0%vac, 10.0%N → 91 atoms, cell=23.2 Å Z
+[10:29:46] [engine.structures.generator] [INFO] Built Ni@C: W30, 2L, 20.0%vac, 6.0%N → 116 atoms, cell=26.6 Å Z
+[10:29:46] [engine.structures.generator] [INFO] Built Ni@C: Mo40, 2L, 0.0%vac, 6.0%N → 128 atoms, cell=26.6 Å Z
+[10:29:46] [engine.structures.generator] [INFO] Built Ni@C: Cu5, 2L, 2.0%vac, 10.0%N → 128 atoms, cell=26.6 Å Z
+[10:29:46] [engine.structures.generator] [INFO] Built Ni@C: Fe10, 1L, 12.0%vac, 10.0%N → 93 atoms, cell=23.2 Å Z
+[10:29:47] [engine.structures.generator] [INFO] Built Ni@C: W15, 1L, 18.0%vac, 10.0%N → 91 atoms, cell=23.2 Å Z
+[10:29:47] [engine.structures.generator] [INFO] Built Ni@C: Cu, 2L, 16.0%vac, 12.0%N → 118 atoms, cell=26.6 Å Z
+[10:29:47] [engine.structures.generator] [INFO] Built Ni@C: Fe35, 4L, 8.0%vac, 14.0%N → 184 atoms, cell=33.4 Å Z
+[10:29:47] [engine.structures.generator] [INFO] Built Ni@C: Mo10, 3L, 14.0%vac, 2.0%N → 148 atoms, cell=30.0 Å Z
+[10:29:47] [engine.structures.generator] [INFO] Built Ni@C: Cu5, 4L, 0.0%vac, 12.0%N → 192 atoms, cell=33.4 Å Z
+[10:29:47] [engine.structures.generator] [INFO] Built Ni@C: Cu35, 3L, 10.0%vac, 10.0%N → 151 atoms, cell=30.0 Å Z
+[10:29:48] [engine.structures.generator] [INFO] Built Ni@C: Mo35, 3L, 10.0%vac, 8.0%N → 151 atoms, cell=30.0 Å Z
+[10:29:48] [engine.structures.generator] [INFO] Built Ni@C: Co, 1L, 4.0%vac, 0.0%N → 95 atoms, cell=23.2 Å Z
+[10:29:48] [engine.structures.generator] [INFO] Built Ni@C: Fe30, 3L, 10.0%vac, 12.0%N → 151 atoms, cell=30.0 Å Z
+[10:29:48] [engine.structures.generator] [INFO] Built Ni@C: Co, 4L, 12.0%vac, 10.0%N → 180 atoms, cell=33.4 Å Z
+[10:29:48] [engine.structures.generator] [INFO] Built Ni@C: Co20, 1L, 12.0%vac, 12.0%N → 93 atoms, cell=23.2 Å Z
+[10:29:49] [engine.structures.generator] [INFO] Built Ni@C: Mo25, 1L, 6.0%vac, 6.0%N → 95 atoms, cell=23.2 Å Z
+[10:29:49] [engine.structures.generator] [INFO] Built Ni@C: W5, 2L, 8.0%vac, 14.0%N → 124 atoms, cell=26.6 Å Z
+[10:29:49] [engine.structures.generator] [INFO] Built Ni@C: W, 1L, 18.0%vac, 0.0%N → 91 atoms, cell=23.2 Å Z
+[10:29:49] [engine.structures.generator] [INFO] Built Ni@C: W10, 4L, 6.0%vac, 6.0%N → 188 atoms, cell=33.4 Å Z
+[10:29:49] [engine.structures.generator] [INFO] Built Ni@C: Co5, 3L, 10.0%vac, 12.0%N → 151 atoms, cell=30.0 Å Z
+[10:29:49] [engine.structures.generator] [INFO] Built Ni@C: W25, 2L, 8.0%vac, 6.0%N → 124 atoms, cell=26.6 Å Z
+[10:29:50] [engine.structures.generator] [INFO] Built Ni@C: Cu10, 1L, 6.0%vac, 0.0%N → 95 atoms, cell=23.2 Å Z
+[10:29:50] [engine.structures.generator] [INFO] Built Ni@C: none, 4L, 14.0%vac, 10.0%N → 176 atoms, cell=33.4 Å Z
+[10:29:50] [engine.structures.generator] [INFO] Built Ni@C: Fe30, 1L, 18.0%vac, 8.0%N → 91 atoms, cell=23.2 Å Z
+[10:29:50] [engine.structures.generator] [INFO] Built Ni@C: W5, 2L, 14.0%vac, 6.0%N → 120 atoms, cell=26.6 Å Z
+[10:29:50] [engine.structures.generator] [INFO] Built Ni@C: Fe5, 2L, 4.0%vac, 4.0%N → 126 atoms, cell=26.6 Å Z
+[10:29:51] [engine.structures.generator] [INFO] Built Ni@C: Cu25, 3L, 6.0%vac, 14.0%N → 157 atoms, cell=30.0 Å Z
+[10:29:51] [engine.structures.generator] [INFO] Built Ni@C: none15, 1L, 6.0%vac, 14.0%N → 95 atoms, cell=23.2 Å Z
+[10:29:51] [engine.structures.generator] [INFO] Built Ni@C: Fe40, 2L, 14.0%vac, 6.0%N → 120 atoms, cell=26.6 Å Z
+[10:29:51] [engine.structures.generator] [INFO] Built Ni@C: Mo30, 4L, 4.0%vac, 12.0%N → 188 atoms, cell=33.4 Å Z
+[10:29:52] [engine.structures.generator] [INFO] Built Ni@C: Mo30, 4L, 8.0%vac, 10.0%N → 184 atoms, cell=33.4 Å Z
+[10:29:52] [engine.structures.generator] [INFO] Built Ni@C: Mo, 1L, 8.0%vac, 14.0%N → 94 atoms, cell=23.2 Å Z
+[10:29:52] [engine.structures.generator] [INFO] Built Ni@C: none20, 3L, 4.0%vac, 10.0%N → 157 atoms, cell=30.0 Å Z
+[10:29:52] [engine.structures.generator] [INFO] Built Ni@C: Mo35, 3L, 12.0%vac, 2.0%N → 151 atoms, cell=30.0 Å Z
+[10:29:52] [engine.structures.generator] [INFO] Built Ni@C: Fe35, 1L, 16.0%vac, 6.0%N → 91 atoms, cell=23.2 Å Z
+[10:29:53] [engine.structures.generator] [INFO] Built Ni@C: Cu25, 2L, 6.0%vac, 10.0%N → 126 atoms, cell=26.6 Å Z
+[10:29:53] [engine.structures.generator] [INFO] Built Ni@C: none25, 1L, 14.0%vac, 10.0%N → 92 atoms, cell=23.2 Å Z
+[10:29:53] [engine.structures.generator] [INFO] Built Ni@C: none30, 2L, 16.0%vac, 0.0%N → 118 atoms, cell=26.6 Å Z
+[10:29:53] [engine.structures.generator] [INFO] Built Ni@C: Mo20, 1L, 6.0%vac, 10.0%N → 95 atoms, cell=23.2 Å Z
+[10:29:53] [engine.structures.generator] [INFO] Built Ni@C: none30, 1L, 2.0%vac, 8.0%N → 96 atoms, cell=23.2 Å Z
+[10:29:54] [engine.structures.generator] [INFO] Built Ni@C: Cu5, 2L, 20.0%vac, 14.0%N → 116 atoms, cell=26.6 Å Z
+[10:29:54] [engine.structures.generator] [INFO] Built Ni@C: Co20, 2L, 12.0%vac, 8.0%N → 122 atoms, cell=26.6 Å Z
+[10:29:54] [engine.structures.generator] [INFO] Built Ni@C: Mo, 1L, 20.0%vac, 6.0%N → 90 atoms, cell=23.2 Å Z
+[10:29:54] [engine.structures.generator] [INFO] Built Ni@C: Fe20, 4L, 0.0%vac, 0.0%N → 192 atoms, cell=33.4 Å Z
+[10:29:55] [engine.structures.generator] [INFO] Built Ni@C: Mo20, 3L, 10.0%vac, 6.0%N → 151 atoms, cell=30.0 Å Z
+[10:29:55] [engine.structures.generator] [INFO] Built Ni@C: W5, 3L, 10.0%vac, 6.0%N → 151 atoms, cell=30.0 Å Z
+[10:29:55] [engine.structures.generator] [INFO] Built Ni@C: Cu10, 4L, 6.0%vac, 8.0%N → 188 atoms, cell=33.4 Å Z
+[10:29:55] [engine.structures.generator] [INFO] Built Ni@C: Co35, 2L, 6.0%vac, 0.0%N → 126 atoms, cell=26.6 Å Z
+[10:29:55] [engine.structures.generator] [INFO] Built Ni@C: Fe35, 1L, 18.0%vac, 8.0%N → 91 atoms, cell=23.2 Å Z
+[10:29:56] [engine.structures.generator] [INFO] Built Ni@C: none10, 3L, 6.0%vac, 0.0%N → 157 atoms, cell=30.0 Å Z
+[10:29:56] [engine.structures.generator] [INFO] Built Ni@C: Co30, 1L, 6.0%vac, 2.0%N → 95 atoms, cell=23.2 Å Z
+[10:29:56] [engine.structures.generator] [INFO] Built Ni@C: Co30, 3L, 20.0%vac, 12.0%N → 142 atoms, cell=30.0 Å Z
+[10:29:57] [engine.structures.generator] [INFO] Built Ni@C: Mo, 3L, 20.0%vac, 14.0%N → 142 atoms, cell=30.0 Å Z
+[10:29:57] [engine.structures.generator] [INFO] Built Ni@C: Mo10, 1L, 2.0%vac, 8.0%N → 96 atoms, cell=23.2 Å Z
+[10:29:57] [engine.structures.generator] [INFO] Built Ni@C: Co15, 2L, 18.0%vac, 6.0%N → 118 atoms, cell=26.6 Å Z
+[10:29:57] [engine.structures.generator] [INFO] Built Ni@C: Cu40, 2L, 4.0%vac, 14.0%N → 126 atoms, cell=26.6 Å Z
+[10:29:58] [engine.structures.generator] [INFO] Built Ni@C: Co10, 3L, 10.0%vac, 14.0%N → 151 atoms, cell=30.0 Å Z
+[10:29:58] [engine.structures.generator] [INFO] Built Ni@C: Mo40, 4L, 2.0%vac, 2.0%N → 192 atoms, cell=33.4 Å Z
+[10:29:58] [engine.structures.generator] [INFO] Built Ni@C: Co, 2L, 8.0%vac, 14.0%N → 124 atoms, cell=26.6 Å Z
+[10:29:58] [engine.structures.generator] [INFO] Built Ni@C: W5, 4L, 2.0%vac, 10.0%N → 192 atoms, cell=33.4 Å Z
+[10:29:59] [engine.structures.generator] [INFO] Built Ni@C: W40, 1L, 18.0%vac, 0.0%N → 91 atoms, cell=23.2 Å Z
+[10:29:59] [engine.structures.generator] [INFO] Built Ni@C: Co20, 2L, 0.0%vac, 12.0%N → 128 atoms, cell=26.6 Å Z
+[10:29:59] [engine.structures.generator] [INFO] Built Ni@C: Fe25, 2L, 8.0%vac, 14.0%N → 124 atoms, cell=26.6 Å Z
+[10:30:00] [engine.structures.generator] [INFO] Built Ni@C: none30, 3L, 8.0%vac, 4.0%N → 154 atoms, cell=30.0 Å Z
+[10:30:00] [engine.structures.generator] [INFO] Built Ni@C: none40, 4L, 4.0%vac, 0.0%N → 188 atoms, cell=33.4 Å Z
+[10:30:00] [engine.structures.generator] [INFO] Built Ni@C: none, 4L, 18.0%vac, 2.0%N → 172 atoms, cell=33.4 Å Z
+[10:29:59] [engine.structures.generator] [INFO] Built Ni@C: Fe25, 2L, 8.0%vac, 14.0%N → 124 atoms, cell=26.6 Å Z
+[10:30:00] [engine.structures.generator] [INFO] Built Ni@C: none30, 3L, 8.0%vac, 4.0%N → 154 atoms, cell=30.0 Å Z
+[10:30:00] [engine.structures.generator] [INFO] Built Ni@C: none40, 4L, 4.0%vac, 0.0%N → 188 atoms, cell=33.4 Å Z
+[10:30:00] [engine.structures.generator] [INFO] Built Ni@C: none, 4L, 18.0%vac, 2.0%N → 172 atoms, cell=33.4 Å Z
+[10:30:00] [engine.structures.generator] [INFO] Built Ni@C: Cu5, 2L, 12.0%vac, 10.0%N → 122 atoms, cell=26.6 Å Z
+[10:30:01] [engine.structures.generator] [INFO] Built Ni@C: W, 1L, 6.0%vac, 4.0%N → 95 atoms, cell=23.2 Å Z
+[10:30:01] [engine.structures.generator] [INFO] Built Ni@C: W30, 2L, 20.0%vac, 6.0%N → 116 atoms, cell=26.6 Å Z
+[10:30:01] [engine.structures.generator] [INFO] Built Ni@C: Co15, 1L, 20.0%vac, 0.0%N → 90 atoms, cell=23.2 Å Z
+[10:30:01] [engine.structures.generator] [INFO] Built Ni@C: Mo10, 2L, 2.0%vac, 0.0%N → 128 atoms, cell=26.6 Å Z
+[10:30:01] [engine.structures.generator] [INFO] Built Ni@C: Cu40, 1L, 6.0%vac, 8.0%N → 95 atoms, cell=23.2 Å Z
+[10:30:01] [engine.structures.generator] [INFO] Built Ni@C: W30, 4L, 12.0%vac, 6.0%N → 180 atoms, cell=33.4 Å Z
+[10:30:02] [engine.structures.generator] [INFO] Built Ni@C: Mo35, 4L, 0.0%vac, 10.0%N → 192 atoms, cell=33.4 Å Z
+[10:30:02] [engine.structures.generator] [INFO] Built Ni@C: none30, 4L, 2.0%vac, 6.0%N → 192 atoms, cell=33.4 Å Z
+[10:30:02] [engine.structures.generator] [INFO] Built Ni@C: none25, 4L, 0.0%vac, 6.0%N → 192 atoms, cell=33.4 Å Z
+[10:30:03] [engine.structures.generator] [INFO] Built Ni@C: W10, 1L, 10.0%vac, 8.0%N → 93 atoms, cell=23.2 Å Z
+[10:30:03] [engine.structures.generator] [INFO] Built Ni@C: Co10, 4L, 10.0%vac, 4.0%N → 180 atoms, cell=33.4 Å Z
+[10:30:03] [engine.structures.generator] [INFO] Built Ni@C: W40, 2L, 0.0%vac, 8.0%N → 128 atoms, cell=26.6 Å Z
+[10:30:03] [engine.structures.generator] [INFO] Built Ni@C: Co5, 3L, 18.0%vac, 0.0%N → 145 atoms, cell=30.0 Å Z
+[10:30:03] [engine.structures.generator] [INFO] Built Ni@C: Cu5, 3L, 8.0%vac, 0.0%N → 154 atoms, cell=30.0 Å Z
+[10:30:03] [engine.structures.generator] [INFO] Built Ni@C: W5, 3L, 2.0%vac, 14.0%N → 160 atoms, cell=30.0 Å Z
+[10:30:04] [engine.structures.generator] [INFO] Built Ni@C: Cu35, 2L, 10.0%vac, 10.0%N → 122 atoms, cell=26.6 Å Z
+[10:30:04] [engine.structures.generator] [INFO] Built Ni@C: Cu35, 1L, 14.0%vac, 0.0%N → 92 atoms, cell=23.2 Å Z
+[10:30:04] [engine.structures.generator] [INFO] Built Ni@C: Mo35, 2L, 16.0%vac, 6.0%N → 118 atoms, cell=26.6 Å Z
+[10:30:04] [engine.structures.generator] [INFO] Built Ni@C: Mo15, 3L, 16.0%vac, 8.0%N → 145 atoms, cell=30.0 Å Z
+[10:30:04] [engine.structures.generator] [INFO] Built Ni@C: W35, 4L, 12.0%vac, 4.0%N → 180 atoms, cell=33.4 Å Z
+[10:30:05] [engine.structures.generator] [INFO] Built Ni@C: Fe5, 2L, 20.0%vac, 6.0%N → 116 atoms, cell=26.6 Å Z
+[10:30:05] [engine.phases.coarse_filter] [INFO]   Generated: 100, Valid: 100, Failed: 0
+[10:30:05] [engine.phases.coarse_filter] [INFO]   CHGNet filtered: 100 → 30 (top 30% + bonus)
+[10:30:05] [engine.phases.coarse_filter] [INFO]   GNoME confirmed: 10/100
+[10:30:05] [engine.phases.coarse_filter] [INFO]   Energy range: 2.373 to 4.145 eV/atom
+[10:30:05] [engine.phases.coarse_filter] [INFO]   Cutoff: 3.233 eV/atom
+[10:30:05] [engine] [INFO] GATE PASS (1a→1b): 30 candidates → screening
+[10:30:05] [engine.phases.screening] [INFO] ==================================================
+[10:30:05] [engine.phases.screening] [INFO] Phase 1b: BAYESIAN OPTIMIZATION SCREENING
+[10:30:05] [engine.phases.screening] [INFO] ==================================================
+[10:30:05] [engine.optimizer.botorch_loop] [INFO] BoTorch optimizer: 5D, 4 objectives, 2 constraints, acq=qLogExpectedHypervolumeImprovement
+[10:30:05] [engine.phases.screening] [INFO] ── Init Round (1 candidates) ──
+[10:30:05] [engine.structures.generator] [INFO] Built Ni@C: Fe40, 2L, 14.0%vac, 6.0%N → 120 atoms, cell=26.6 Å Z
+[10:50:12] [engine.phases.screening] [INFO]   [init 1/1] Fe40 2L 14%v 6%N → hor_activity=-0.406, h2_barrier=1.909, o2_barrier=32.787, shell_stability=0.500 (1207.3s)
+[10:50:12] [engine.phases.screening] [INFO] ── BO Iteration 1/1 ──
+[10:50:12] [engine.optimizer.botorch_loop] [WARNING] Not enough data for GP. Returning random.
+[10:50:12] [engine.structures.generator] [INFO] Built Ni@C: none2, 1L, 1.0516032872215408%vac, 7.892578452821428%N → 96 atoms, cell=23.2 Å Z
+[11:07:42] [engine.phases.screening] [INFO]   [BO 2/2] Ni 1L 1%v 7%N → hor_activity=-0.466, h2_barrier=5.782, o2_barrier=2702946.718, shell_stability=1.000 (1049.4s)
+[11:07:42] [engine.phases.screening] [INFO] Screening complete: 2 success, 0 failed, best=2702953.034
+[11:07:42] [engine.analysis.verification] [INFO] ==================================================
+[11:07:42] [engine.analysis.verification] [INFO] VERIFICATION PIPELINE
+[11:07:42] [engine.analysis.verification] [INFO] ==================================================
+[11:07:42] [engine.analysis.verification] [WARNING] Ensemble: 2 top candidates uncertain
+[11:07:42] [engine.analysis.verification] [INFO]   [PASS] Sanity: All values in physical range
+[11:07:42] [engine.analysis.verification] [INFO]   [FAIL] Convergence: Too few data points (2)
+[11:07:42] [engine.analysis.verification] [INFO]   [FAIL] Cross-tool: Too few candidates
+[11:07:42] [engine.analysis.verification] [INFO]   [FAIL] Ensemble: 2/5 top candidates have high uncertainty
+[11:07:42] [engine.analysis.verification] [INFO]   [PASS] Perturbation: Too few candidates to assess (assumed OK)
+[11:07:42] [engine.analysis.verification] [INFO]   [PASS] Literature: Too few candidates (assumed OK)
+[11:07:42] [engine.analysis.verification] [INFO]   [PASS] Consistency: 0/2 have H₂_barrier > O₂_barrier (unexpected)
+[11:07:42] [engine.analysis.verification] [INFO]   TRUST SCORE: D (4.0/7.0)
+[11:07:42] [engine] [INFO] Trust Score: D
+[11:07:42] [engine] [ERROR] GATE FAIL (Phase 1→2): Trust Score D. Results NOT reliable. DO NOT proceed to lab.
+[11:07:42] [engine] [ERROR] Options: debug model, check calibration, expand search space, add data
+[11:07:42] [engine.utils.reporter] [INFO] Results CSV saved: rnd/compute/ni_carbon_shell_optimization/results.csv (2 rows)
+[11:07:42] [engine.utils.reporter] [INFO] Ranked MD saved: rnd/compute/ni_carbon_shell_optimization/ranked_candidates.md
+[11:07:42] [engine.utils.reporter] [INFO] Pareto plot saved: rnd/compute/ni_carbon_shell_optimization/pareto.png
+[11:07:42] [engine.utils.reporter] [INFO] Verification report saved: rnd/compute/ni_carbon_shell_optimization/verification_report.md
