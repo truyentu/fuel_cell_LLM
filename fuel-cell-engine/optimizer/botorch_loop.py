@@ -1,6 +1,10 @@
 """
 BoTorch optimization loop — multi-objective Bayesian optimization.
 Suggests next candidates based on Pareto front optimization.
+
+When data is insufficient for GP, can use LLM-guided suggestions
+based on literature knowledge (Norskov volcano plot, known alloy systems)
+instead of pure random sampling.
 """
 
 import logging
@@ -14,6 +18,16 @@ logger = logging.getLogger("engine.optimizer.botorch_loop")
 # Default dtype for BoTorch (float32 → GP instability, always use float64)
 DTYPE = torch.double
 
+# Search variable names and known-good ranges from literature
+# Used by LLM-guided suggestions
+SEARCH_VARS = [
+    {"name": "dopant_type", "options": ["Fe", "Co", "Cu", "Mo", "W", "none"], "idx_map": True},
+    {"name": "dopant_percent", "range": [5, 45]},
+    {"name": "n_layers", "range": [1, 4]},
+    {"name": "vacancy_percent", "range": [0, 20]},
+    {"name": "n_doping_percent", "range": [0, 16]},
+]
+
 
 class BayesianOptimizer:
     """Multi-objective Bayesian optimization using BoTorch."""
@@ -26,6 +40,7 @@ class BayesianOptimizer:
         acquisition: str = "qLogExpectedHypervolumeImprovement",
         seed: int = 42,
         device: str = "cpu",
+        llm_advisor=None,
     ):
         """
         Parameters:
@@ -35,6 +50,7 @@ class BayesianOptimizer:
             acquisition: Acquisition function name
             seed: Random seed
             device: torch device
+            llm_advisor: Optional LLMAdvisor instance for guided suggestions
         """
         self.bounds = bounds.to(dtype=DTYPE, device=device)
         self.d = bounds.shape[1]
@@ -43,6 +59,7 @@ class BayesianOptimizer:
         self.acquisition_name = acquisition
         self.seed = seed
         self.device = device
+        self.llm_advisor = llm_advisor
 
         self.train_X = torch.empty(0, self.d, dtype=DTYPE, device=device)
         self.train_Y = torch.empty(0, len(objectives), dtype=DTYPE, device=device)
@@ -71,11 +88,17 @@ class BayesianOptimizer:
     def suggest_next(self, q: int = 1) -> Optional[torch.Tensor]:
         """
         Suggest next q candidate(s) using Bayesian optimization.
+        When insufficient data for GP, uses LLM-guided suggestions if available.
 
         Returns:
             (q, d) tensor of suggested parameters, or None on failure.
         """
         if len(self.train_X) < 2:
+            # Try LLM-guided suggestion first
+            if self.llm_advisor and self.llm_advisor.enabled:
+                guided = self._llm_guided_suggest(q)
+                if guided is not None:
+                    return guided
             logger.warning("Not enough data for GP. Returning random.")
             return self.suggest_initial(q)
 
@@ -87,6 +110,96 @@ class BayesianOptimizer:
         except Exception as e:
             logger.error(f"BoTorch suggest failed: {e}. Using random fallback.")
             return self.suggest_initial(q)
+
+    def _llm_guided_suggest(self, q: int) -> Optional[torch.Tensor]:
+        """
+        Use LLM to suggest promising compositions based on literature knowledge.
+        Returns normalized tensor in bounds, or None if LLM unavailable/fails.
+        """
+        # Build context from existing observations (if any)
+        context_parts = [
+            "System: Ni@C catalyst for AEMFC anode (HOR).",
+            f"Search variables (normalized 0-1 within bounds):",
+            f"  dim0: dopant_type (0=Fe, 0.2=Co, 0.4=Cu, 0.6=Mo, 0.8=W, 1.0=none)",
+            f"  dim1: dopant_percent ({self.bounds[0][1]:.0f}-{self.bounds[1][1]:.0f}%)",
+            f"  dim2: n_layers ({self.bounds[0][2]:.0f}-{self.bounds[1][2]:.0f})",
+            f"  dim3: vacancy_percent ({self.bounds[0][3]:.0f}-{self.bounds[1][3]:.0f}%)",
+            f"  dim4: n_doping_percent ({self.bounds[0][4]:.0f}-{self.bounds[1][4]:.0f}%)",
+            f"Objectives: minimize |ΔG_H|, minimize h2_barrier, maximize o2_barrier, maximize shell_stability.",
+        ]
+
+        if len(self.train_X) > 0:
+            context_parts.append(f"\nPrevious results ({len(self.train_X)} candidates):")
+            for i in range(len(self.train_X)):
+                x = self.train_X[i].tolist()
+                y = self.train_Y[i].tolist()
+                context_parts.append(f"  X={[f'{v:.2f}' for v in x]} → Y={[f'{v:.3f}' for v in y]}")
+
+        context = "\n".join(context_parts)
+
+        question = (
+            f"Suggest {q} promising candidate composition(s) as raw parameter values.\n"
+            f"Based on literature: Ni3Fe@C (Yan 2020) and N-doped graphene (Deng 2015) "
+            f"showed best HOR in alkaline. Consider:\n"
+            f"- Fe 25-40% for optimal HOR (near volcano peak)\n"
+            f"- 1-2 layers graphene for H2 permeability\n"
+            f"- 10-16% vacancy for low H2 barrier\n"
+            f"- 4-8% N-doping for electronic modification\n\n"
+            f"Output ONLY {q} line(s), each with 5 numbers separated by commas:\n"
+            f"dopant_type_idx(0-5), dopant_percent, n_layers, vacancy_percent, n_doping_percent\n"
+            f"Example: 0, 35, 2, 12, 6"
+        )
+
+        try:
+            response = self.llm_advisor.ask(context, question)
+            if response is None:
+                return None
+
+            candidates = []
+            for line in response.strip().split("\n"):
+                line = line.strip()
+                if not line or line.startswith("#") or line.startswith("//"):
+                    continue
+                # Parse numbers from line
+                parts = [p.strip() for p in line.replace(";", ",").split(",")]
+                try:
+                    values = [float(p) for p in parts[:5]]
+                    if len(values) == 5:
+                        candidates.append(values)
+                except ValueError:
+                    continue
+                if len(candidates) >= q:
+                    break
+
+            if not candidates:
+                logger.warning("LLM response could not be parsed. Falling back to random.")
+                return None
+
+            # Convert to tensor and clip to bounds
+            tensor = torch.tensor(candidates[:q], dtype=DTYPE, device=self.device)
+
+            # Map dopant_type_idx (0-5) to normalized bound range
+            # dim0: dopant index needs mapping to actual bounds
+            n_dopants = 6  # Fe, Co, Cu, Mo, W, none
+            tensor[:, 0] = tensor[:, 0] / (n_dopants - 1) * (
+                self.bounds[1][0] - self.bounds[0][0]
+            ) + self.bounds[0][0]
+
+            # Clip all dimensions to bounds
+            for d in range(self.d):
+                tensor[:, d] = tensor[:, d].clamp(
+                    self.bounds[0][d].item(), self.bounds[1][d].item()
+                )
+
+            logger.info(
+                f"LLM-guided suggestion: {tensor.squeeze().tolist()} "
+                f"(literature-informed, not random)"
+            )
+            return tensor
+
+        except Exception as e:
+            logger.warning(f"LLM-guided suggest failed: {e}. Falling back to random.")
+            return None
 
     def _botorch_suggest(self, q: int) -> torch.Tensor:
         """Internal: use BoTorch GP + acquisition function."""

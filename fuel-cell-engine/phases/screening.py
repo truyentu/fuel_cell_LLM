@@ -97,6 +97,7 @@ def run_screening(
         constraints=[c.model_dump() for c in opt_config.constraints],
         acquisition=opt_config.acquisition,
         seed=opt_config.seed,
+        llm_advisor=llm_advisor,
     )
 
     # Resume from checkpoint if available
