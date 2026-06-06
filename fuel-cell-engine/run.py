@@ -66,9 +66,17 @@ def main():
     synterra_query = SynTERRAQuery()
     llm_advisor = LLMAdvisor(config.llm_in_loop.model_dump())
 
+    # Determine OC20 status
+    if oc20_runner.calc is not None:
+        oc20_status = "OK"
+    elif oc20_runner._use_descriptor_fallback:
+        oc20_status = "DESCRIPTOR"
+    else:
+        oc20_status = "MOCK"
+
     logger.info(
         f"Runners: MACE={'OK' if mace_runner.is_available else 'MOCK'}, "
-        f"OC20={'OK' if oc20_runner.is_available else 'MOCK'}, "
+        f"OC20={oc20_status}, "
         f"CHGNet={'OK' if chgnet_runner.is_available else 'MOCK'}, "
         f"JDFTx={'OK' if jdftx_runner.is_available else 'MOCK'}, "
         f"GNoME={'OK' if gnome_lookup.is_available else 'OFF'}, "

@@ -1,6 +1,7 @@
 torch>=2.2.0
 mace-torch>=0.3.0
 fairchem-core>=1.0.0
+huggingface_hub>=0.20.0
 botorch>=0.9.0
 gpytorch>=1.11
 ase>=3.22.0
