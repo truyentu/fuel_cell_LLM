@@ -16,13 +16,21 @@ class LLMAdvisor:
         self.enabled = config.get("enabled", False)
         self.model = config.get("model", "claude-sonnet-4-20250514")
         self.max_calls = config.get("max_llm_calls", 5)
+        self.base_url = config.get("base_url", None)  # e.g. "https://vip.claudible.io/v1"
         self.call_count = 0
         self.client = None
 
         if self.enabled:
             try:
                 import anthropic
-                self.client = anthropic.Anthropic()
+                import os
+                kwargs = {}
+                # Use base_url from config or env
+                base_url = self.base_url or os.environ.get("ANTHROPIC_BASE_URL")
+                if base_url:
+                    kwargs["base_url"] = base_url
+                    logger.info(f"LLM Advisor using gateway: {base_url}")
+                self.client = anthropic.Anthropic(**kwargs)
                 logger.info(f"LLM Advisor enabled: {self.model}, max {self.max_calls} calls")
             except (ImportError, Exception) as e:
                 logger.warning(f"LLM Advisor disabled: {e}")

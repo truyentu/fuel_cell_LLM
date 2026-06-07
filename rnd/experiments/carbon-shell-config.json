@@ -232,6 +232,7 @@
     "enabled": true,
     "api": "anthropic",
     "model": "claude-sonnet-4-20250514",
+    "base_url": "https://vip.claudible.io",
     "triggers": {
       "high_failure_rate": {"threshold": 0.3},
       "convergence_stalled": {"n_iter_no_improve": 5},
